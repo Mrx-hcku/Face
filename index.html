@@ -6,28 +6,30 @@
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2"></script>
   <style>
     body {
-      font-family: sans-serif;
-      background: #f0f0f0;
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
       text-align: center;
-      padding: 10px;
+      padding: 15px;
     }
-    video, canvas {
+    h2 {
+      color: #333;
+    }
+    video {
       width: 90%;
       max-width: 350px;
       border-radius: 10px;
-      margin: 10px auto;
+      margin-top: 10px;
     }
     button {
-      display: block;
       width: 90%;
       max-width: 300px;
-      margin: 10px auto;
       padding: 12px;
+      margin: 10px auto;
       font-size: 16px;
-      border: none;
-      border-radius: 8px;
       background-color: #007bff;
       color: white;
+      border: none;
+      border-radius: 8px;
     }
     button:hover {
       background-color: #0056b3;
@@ -37,9 +39,7 @@
 <body>
 
   <h2>Face Login Demo</h2>
-
   <video id="video" autoplay muted playsinline></video>
-  <canvas id="overlay" style="display:none;"></canvas>
 
   <button onclick="registerFace()">Register Face</button>
   <button onclick="loginFace()">Login with Face</button>
@@ -67,8 +67,10 @@
 
     function startVideo() {
       navigator.mediaDevices.getUserMedia({ video: {} })
-        .then(stream => video.srcObject = stream)
-        .catch(err => alert("Camera error: " + err));
+        .then(stream => {
+          video.srcObject = stream;
+        })
+        .catch(err => alert("Camera access error: " + err));
     }
 
     async function detectFace() {
@@ -102,7 +104,7 @@
       const result = await detectFace();
       if (!result || !savedDescriptor) {
         failSound.play();
-        alert("No face registered or detected.");
+        alert("No face registered or face not detected.");
         return;
       }
 
