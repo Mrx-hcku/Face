@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Face Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    video, canvas {
+      width: 100%;
+      max-width: 360px;
+      border-radius: 10px;
+      margin: 10px auto;
+    }
+    button {
+      padding: 12px 20px;
+      margin: 10px;
+      font-size: 18px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 80%;
+      max-width: 300px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h2>Face Login Demo</h2>
+
+  <video id="video" autoplay muted playsinline></video>
+  <canvas id="overlay"></canvas>
+
+  <button onclick="saveFace()">Register Face</button>
+  <button onclick="verifyFace()">Login with Face</button>
+
+  <!-- Free sound effects -->
+  <audio id="successSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+  <audio id="failSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+
+  <script>
+    const video = document.getElementById('video');
+    const successSound = document.getElementById('successSound');
+    const failSound = document.getElementById('failSound');
+
+    let savedDescriptor = null;
+    let modelsLoaded = false;
+
+    // Load face-api.js models
+    Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+      faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
+      faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models')
+    ]).then(() => {
+      modelsLoaded = true;
+      startVideo();
+    });
+
+    function startVideo() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => video.srcObject = stream)
+        .catch(err => alert("Camera error: " + err));
+    }
+
+    async function detectFace() {
+      if (!modelsLoaded) {
+        alert("Face models still loading...");
+        return null;
+      }
+
+      const detection = await faceapi
+        .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      return detection;
+    }
+
+    async function saveFace() {
+      const detection = await detectFace();
+      if (!detection) {
+        failSound.play();
+        return alert("Face not detected. Try again.");
+      }
+
+      savedDescriptor = detection.descriptor;
+      successSound.play();
+      alert("Face registered successfully!");
+    }
+
+    async function verifyFace() {
+      const detection = await detectFace();
+      if (!detection) {
+        failSound.play();
+        return alert("Face not detected.");
+      }
+
+      if (!savedDescriptor) {
+        failSound.play();
+        return alert("Please register your face first.");
+      }
+
+      const distance = faceapi.euclideanDistance(savedDescriptor, detection.descriptor);
+      if (distance < 0.5) {
+        successSound.play();
+        alert("Access Granted!");
+      } else {
+        failSound.play();
+        alert("Access Denied!");
+      }
+    }
+  </script>
+</body>
+</html>
