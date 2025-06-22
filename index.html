@@ -8,27 +8,26 @@
     body {
       font-family: sans-serif;
       background: #f0f0f0;
-      margin: 0;
-      padding: 20px;
       text-align: center;
+      padding: 10px;
     }
     video, canvas {
-      width: 100%;
-      max-width: 360px;
+      width: 90%;
+      max-width: 350px;
       border-radius: 10px;
       margin: 10px auto;
     }
     button {
-      padding: 12px 20px;
-      margin: 10px;
-      font-size: 18px;
-      background: #007bff;
-      color: white;
+      display: block;
+      width: 90%;
+      max-width: 300px;
+      margin: 10px auto;
+      padding: 12px;
+      font-size: 16px;
       border: none;
       border-radius: 8px;
-      cursor: pointer;
-      width: 80%;
-      max-width: 300px;
+      background-color: #007bff;
+      color: white;
     }
     button:hover {
       background-color: #0056b3;
@@ -36,38 +35,38 @@
   </style>
 </head>
 <body>
+
   <h2>Face Login Demo</h2>
 
   <video id="video" autoplay muted playsinline></video>
-  <canvas id="overlay"></canvas>
+  <canvas id="overlay" style="display:none;"></canvas>
 
-  <button onclick="saveFace()">Register Face</button>
-  <button onclick="verifyFace()">Login with Face</button>
+  <button onclick="registerFace()">Register Face</button>
+  <button onclick="loginFace()">Login with Face</button>
 
-  <!-- Free sound effects -->
+  <!-- Sounds -->
   <audio id="successSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
   <audio id="failSound" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
 
   <script>
-    const video = document.getElementById('video');
-    const successSound = document.getElementById('successSound');
-    const failSound = document.getElementById('failSound');
+    const video = document.getElementById("video");
+    const successSound = document.getElementById("successSound");
+    const failSound = document.getElementById("failSound");
 
     let savedDescriptor = null;
     let modelsLoaded = false;
 
-    // Load face-api.js models
     Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
-      faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models'),
-      faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models')
+      faceapi.nets.tinyFaceDetector.loadFromUri('./models'),
+      faceapi.nets.faceLandmark68Net.loadFromUri('./models'),
+      faceapi.nets.faceRecognitionNet.loadFromUri('./models')
     ]).then(() => {
       modelsLoaded = true;
       startVideo();
     });
 
     function startVideo() {
-      navigator.mediaDevices.getUserMedia({ video: true })
+      navigator.mediaDevices.getUserMedia({ video: {} })
         .then(stream => video.srcObject = stream)
         .catch(err => alert("Camera error: " + err));
     }
@@ -86,31 +85,28 @@
       return detection;
     }
 
-    async function saveFace() {
-      const detection = await detectFace();
-      if (!detection) {
+    async function registerFace() {
+      const result = await detectFace();
+      if (!result) {
         failSound.play();
-        return alert("Face not detected. Try again.");
+        alert("Face not detected. Try again.");
+        return;
       }
 
-      savedDescriptor = detection.descriptor;
+      savedDescriptor = result.descriptor;
       successSound.play();
-      alert("Face registered successfully!");
+      alert("Face registered successfully.");
     }
 
-    async function verifyFace() {
-      const detection = await detectFace();
-      if (!detection) {
+    async function loginFace() {
+      const result = await detectFace();
+      if (!result || !savedDescriptor) {
         failSound.play();
-        return alert("Face not detected.");
+        alert("No face registered or detected.");
+        return;
       }
 
-      if (!savedDescriptor) {
-        failSound.play();
-        return alert("Please register your face first.");
-      }
-
-      const distance = faceapi.euclideanDistance(savedDescriptor, detection.descriptor);
+      const distance = faceapi.euclideanDistance(savedDescriptor, result.descriptor);
       if (distance < 0.5) {
         successSound.play();
         alert("Access Granted!");
@@ -120,5 +116,6 @@
       }
     }
   </script>
+
 </body>
 </html>
